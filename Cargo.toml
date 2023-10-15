@@ -1,0 +1,51 @@
+[workspace]
+resolver = "2"
+members = [
+  "ettllama-server",
+  "ettllama-cli",
+]
+
+[workspace.dependencies]
+color-eyre = "0.6"
+dotenv = "0.15"
+eyre = "0.6"
+http = "0.2"
+inquire = "0.6"
+maplit = "1.0"
+owo-colors = "3.5"
+rand = "0.8"
+rustls = "0.21"
+rustls-pemfile = "1.0"
+sha2 = "0.10"
+string_template = "0.2"
+tokio-rustls = "0.24"
+tokio-tungstenite = "0.20"
+tracing = "0.1"
+tungstenite = "0.20"
+webpki-roots = "0.25"
+
+[workspace.dependencies.futures]
+version = "0.3"
+default-features = false
+features = ["std", "async-await"]
+
+[workspace.dependencies.llm]
+git = "https://github.com/rustformers/llm.git"
+rev = "84800b0"
+default-features = false
+features = ["models"]
+
+[workspace.dependencies.tokio]
+version = "1.33"
+features = ["full"]
+
+[workspace.dependencies.tracing-subscriber]
+version = "0.3"
+features = ["env-filter"]
+
+[workspace.dependencies.trust-dns-resolver]
+version = "0.23"
+features = ["tokio-runtime", "dns-over-rustls"]
+
+[profile.dev.package.ggml-sys]
+opt-level = 3

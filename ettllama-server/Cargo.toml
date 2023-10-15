@@ -1,0 +1,30 @@
+[package]
+name = "ettllama-server"
+version = "0.1.0"
+edition = "2021"
+authors = ["flippette <quangdatle2006@outlook.com>"]
+license = "Unlicense"
+
+[features]
+clblast = ["llm/clblast"]
+cublas = ["llm/cublas"]
+metal = ["llm/metal"]
+
+[dependencies]
+color-eyre.workspace = true
+dotenv.workspace = true
+eyre.workspace = true
+futures.workspace = true
+llm.workspace = true
+maplit.workspace = true
+rand.workspace = true
+rustls.workspace = true
+rustls-pemfile.workspace = true
+sha2.workspace = true
+string_template.workspace = true
+tokio.workspace = true
+tokio-rustls.workspace = true
+tokio-tungstenite.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tungstenite.workspace = true

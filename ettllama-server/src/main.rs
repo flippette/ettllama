@@ -44,11 +44,12 @@ async fn main() -> Result<()> {
         .map(Certificate)
         .collect::<Vec<_>>();
     let key_file = File::open(env::var(TLS_KEY_VAR)?)?;
-    let mut keys_reader = BufReader::new(key_file);
-    let keys = rustls_pemfile::pkcs8_private_keys(&mut keys_reader)?
+    let mut key_reader = BufReader::new(key_file);
+    let key = rustls_pemfile::pkcs8_private_keys(&mut key_reader)?
         .into_iter()
         .map(PrivateKey)
-        .collect::<Vec<_>>();
+        .next()
+        .expect("PEM-encoded private key");
 
     let model: Arc<dyn llm::Model> = Arc::from(llm::load_dynamic(
         env::var(MODEL_ARCH_VAR)?.parse().ok(),
@@ -84,7 +85,7 @@ async fn main() -> Result<()> {
         ServerConfig::builder()
             .with_safe_defaults()
             .with_no_client_auth()
-            .with_single_cert(certs, keys[0].clone())?,
+            .with_single_cert(certs, key)?,
     ));
 
     let socket = TcpListener::bind(env::var(ADDR_VAR)?.parse::<SocketAddr>()?).await?;

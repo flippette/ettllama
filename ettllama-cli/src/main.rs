@@ -86,4 +86,6 @@ async fn main() -> Result<()> {
         println!();
         io::stdout().lock().flush()?;
     }
+
+    Ok(())
 }

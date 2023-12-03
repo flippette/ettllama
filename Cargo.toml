@@ -31,7 +31,7 @@ features = ["std", "async-await"]
 
 [workspace.dependencies.llm]
 git = "https://github.com/rustformers/llm.git"
-rev = "84800b0"
+rev = "9376078"
 default-features = false
 features = ["models"]
 

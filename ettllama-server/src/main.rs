@@ -1,10 +1,11 @@
-use eyre::Result;
+use eyre::{bail, Result};
 use futures::{SinkExt, StreamExt};
 use maplit::hashmap;
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use sha2::{Digest, Sha256};
 use std::{
-    convert::Infallible, env, fs::File, io::BufReader, net::SocketAddr, path::PathBuf, sync::Arc,
+    convert::Infallible, env, fs::File, io::BufReader, net::SocketAddr,
+    path::PathBuf, sync::Arc,
 };
 use string_template::Template;
 use tokio::{
@@ -58,15 +59,28 @@ async fn main() -> Result<()> {
         llm::ModelParameters {
             use_gpu: accelerated!(),
             gpu_layers: if accelerated!() {
-                env::var(ACCEL_OFFLOAD_LAYERS_VAR)?.parse().ok()
+                match env::var(ACCEL_OFFLOAD_LAYERS_VAR)?
+                    .to_lowercase()
+                    .as_str()
+                {
+                    "all" => None,
+                    layers if layers.chars().all(|c| c.is_ascii_digit()) => {
+                        layers.parse().ok()
+                    }
+                    other => bail!("parsing accelerator offload layers failed: expected number, got \"{other}\""),
+                }
             } else {
                 None
             },
             ..Default::default()
         },
         |progress| match progress {
-            llm::LoadProgress::HyperparametersLoaded => info!("loaded hyperparams!"),
-            llm::LoadProgress::ContextSize { bytes } => info!("context size: {bytes}B"),
+            llm::LoadProgress::HyperparametersLoaded => {
+                info!("loaded hyperparams!")
+            }
+            llm::LoadProgress::ContextSize { bytes } => {
+                info!("context size: {bytes}B")
+            }
             llm::LoadProgress::TensorLoaded {
                 current_tensor,
                 tensor_count,
@@ -88,7 +102,8 @@ async fn main() -> Result<()> {
             .with_single_cert(certs, key)?,
     ));
 
-    let socket = TcpListener::bind(env::var(ADDR_VAR)?.parse::<SocketAddr>()?).await?;
+    let socket =
+        TcpListener::bind(env::var(ADDR_VAR)?.parse::<SocketAddr>()?).await?;
 
     while let Ok((stream, addr)) = socket.accept().await {
         let Ok(stream) = acceptor.accept(stream).await else {
@@ -127,7 +142,8 @@ async fn handler(
         ..Default::default()
     });
 
-    let template = Template::new(&fs::read_to_string(env::var(TEMPLATE_FILE_VAR)?).await?);
+    let template =
+        Template::new(&fs::read_to_string(env::var(TEMPLATE_FILE_VAR)?).await?);
 
     while let Some(Ok(Message::Text(prompt))) = reader.next().await {
         let mut hasher = Sha256::new();
@@ -140,9 +156,12 @@ async fn handler(
         let prompt = template.render(&template_params);
 
         for word in prompt.split_whitespace() {
-            session.feed_prompt(&*model, word, &mut llm::OutputRequest::default(), |_| {
-                Ok::<_, Infallible>(llm::InferenceFeedback::Continue)
-            })?;
+            session.feed_prompt(
+                &*model,
+                word,
+                &mut llm::OutputRequest::default(),
+                |_| Ok::<_, Infallible>(llm::InferenceFeedback::Continue),
+            )?;
             yield_now().await;
         }
 
